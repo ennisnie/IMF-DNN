@@ -23,6 +23,8 @@ def training_step(scores, y, params, learning_rate):
       batch of data; evaluating the loss also performs a gradient descent step
       on params (see above).
     """
+    #展开列表
+    feed= [i for k in params for i in k]
     # First compute the loss; the first line gives losses for each example in
     # the minibatch, and the second averages the losses across the batch
     losses = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=scores)
@@ -35,11 +37,11 @@ def training_step(scores, y, params, learning_rate):
     # it then adds new operations to the computational graph which compute the
     # requested gradients, and returns a list of TensorFlow Tensors that will
     # contain the requested gradients when evaluated.
-    grad_params = tf.gradients(loss, params)
+    grad_params = tf.gradients(loss, feed)
     
     # Make a gradient descent step on all of the model parameters.
     new_weights = []   
-    for w, grad_w in zip(params, grad_params):
+    for w, grad_w in zip(feed, grad_params):
         new_w = tf.assign_sub(w, learning_rate * grad_w)
         new_weights.append(new_w)
 
@@ -49,22 +51,7 @@ def training_step(scores, y, params, learning_rate):
         return tf.identity(loss)
 
 def train_part2(model_fn, init_fn, learning_rate):
-    """
-    Train a model on CIFAR-10.
-    
-    Inputs:
-    - model_fn: A Python function that performs the forward pass of the model
-      using TensorFlow; it should have the following signature:
-      scores = model_fn(x, params) where x is a TensorFlow Tensor giving a
-      minibatch of image data, params is a list of TensorFlow Tensors holding
-      the model weights, and scores is a TensorFlow Tensor of shape (N, C)
-      giving scores for all elements of x.
-    - init_fn: A Python function that initializes the parameters of the model.
-      It should have the signature params = init_fn() where params is a list
-      of TensorFlow Tensors holding the (randomly initialized) weights of the
-      model.
-    - learning_rate: Python float giving the learning rate to use for SGD.
-    """
+
     # First clear the default graph
     tf.reset_default_graph()
     is_training = tf.placeholder(tf.bool, name='is_training')
@@ -72,10 +59,12 @@ def train_part2(model_fn, init_fn, learning_rate):
     # and weight updates.
     with tf.device(device):
         # Set up placeholders for the data and labels
-        x = tf.placeholder(tf.float32, [None, 32, 32, 3])
+        x1 = tf.placeholder(tf.float32, [None, 32, 32, 3])
+        x2 = tf.placeholder(tf.float32, [None, 32, 32, 3])
+        
         y = tf.placeholder(tf.int32, [None])
         params = init_fn()           # Initialize the model parameters
-        scores = model_fn(x, params) # Forward pass of the model
+        scores = model_fn(x1,x2, params) # Forward pass of the model
         loss = training_step(scores, y, params, learning_rate)
 
     # Now we actually run the graph many times using the training data
@@ -85,15 +74,15 @@ def train_part2(model_fn, init_fn, learning_rate):
         for t, (x_np, y_np) in enumerate(train_dset):
             # Run the graph on a batch of training data; recall that asking
             # TensorFlow to evaluate loss will cause an SGD step to happen.
-            feed_dict = {x: x_np, y: y_np}
+            feed_dict = {x1: x_np,x2:x_np, y: y_np}
             loss_np = sess.run(loss, feed_dict=feed_dict)
             
             # Periodically print the loss and check accuracy on the val set
             if t % print_every == 0:
                 print('Iteration %d, loss = %.4f' % (t, loss_np))
-                check_accuracy(sess, val_dset, x, scores, is_training)
+                check_accuracy(sess, val_dset, x1,x2, scores, is_training)
 
-def check_accuracy(sess, dset, x, scores, is_training=None):
+def check_accuracy(sess, dset, x1,x2, scores, is_training=None):
     """
     Check accuracy on a classification model.
     
@@ -108,7 +97,7 @@ def check_accuracy(sess, dset, x, scores, is_training=None):
     """
     num_correct, num_samples = 0, 0
     for x_batch, y_batch in dset:
-        feed_dict = {x: x_batch, is_training: 0}
+        feed_dict = {x1: x_batch,x2:x_batch, is_training: 0}
         scores_np = sess.run(scores, feed_dict=feed_dict)
         y_pred = scores_np.argmax(axis=1)
         num_samples += x_batch.shape[0]
@@ -123,21 +112,49 @@ def kaiming_normal(shape):
         fan_in, fan_out = np.prod(shape[:3]), shape[3]
     return tf.random_normal(shape) * np.sqrt(2.0 / fan_in)
 
-def two_layer_fc_init():
+def conv_centralnet_init():
     """
-    Initialize the weights of a two-layer network, for use with the
-    two_layer_network function defined above.
+    Initialize the weights of a Three-Layer ConvNet, for use with the
+    three_layer_convnet function defined above.
     
     Inputs: None
     
-    Returns: A list of:
-    - w1: TensorFlow Variable giving the weights for the first layer
-    - w2: TensorFlow Variable giving the weights for the second layer
+    Returns a list containing:
+    - conv_w1: TensorFlow Variable giving weights for the first conv layer
+    - conv_b1: TensorFlow Variable giving biases for the first conv layer
+    - conv_w2: TensorFlow Variable giving weights for the second conv layer
+    - conv_b2: TensorFlow Variable giving biases for the second conv layer
+    - fc_w: TensorFlow Variable giving weights for the fully-connected layer
+    - fc_b: TensorFlow Variable giving biases for the fully-connected layer
     """
-    hidden_layer_size = 4000
-    w1 = tf.Variable(kaiming_normal((3 * 32 * 32, 4000)))
-    w2 = tf.Variable(kaiming_normal((4000, 10)))
-    return [w1, w2]
+    params = None
+    #conv1
+    conv1_w1 = tf.Variable(kaiming_normal([5,5,3,32]))
+    conv1_b1 = tf.Variable(tf.zeros(32))
+    conv1_w2 = tf.Variable(kaiming_normal([3,3,32,16]))
+    conv1_b2 = tf.Variable(tf.zeros(16))
+    fc1_w = tf.Variable(kaiming_normal((16 * 32 * 32, 10)))
+    fc1_b = tf.Variable(tf.zeros(10))
+    #conv2
+    conv2_w1 = tf.Variable(kaiming_normal([5,5,3,32]))
+    conv2_b1 = tf.Variable(tf.zeros(32))
+    conv2_w2 = tf.Variable(kaiming_normal([3,3,32,16]))
+    conv2_b2 = tf.Variable(tf.zeros(16))
+    fc2_w = tf.Variable(kaiming_normal((16 * 32 * 32, 10)))
+    fc2_b = tf.Variable(tf.zeros(10))
+    #centralnet
+    c11 = tf.Variable(kaiming_normal((32 * 32 * 32, 4)))
+    c12 = tf.Variable(kaiming_normal((32 * 32 * 32, 4)))
+    c21 = tf.Variable(kaiming_normal((16 * 32 * 32, 10)))
+    c22 = tf.Variable(kaiming_normal((16 * 32 * 32, 10)))
+    cc1 = tf.Variable(kaiming_normal((4, 10)))
+    
+    feed1 = [conv1_w1, conv1_b1, conv1_w2, conv1_b2, fc1_w, fc1_b]
+    feed2 = [conv2_w1, conv2_b1, conv2_w2, conv2_b2, fc2_w, fc2_b]
+    feedc=[c11,c12,c21,c22,cc1]
+    params=[feed1,feed2,feedc]
+    
+    return params
 
-learning_rate = 1e-2
-train_part2(two_layer_fc, two_layer_fc_init, learning_rate)
+learning_rate = 3e-3
+train_part2(conv_centralnet, conv_centralnet_init, learning_rate)
