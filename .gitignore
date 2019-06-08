@@ -1,0 +1,12 @@
+.vscode/
+*pyc
+data/dbnet-2018/train
+data/dbnet-2018/val
+data/dbnet-2018/test
+data/demo/DVR
+data/demo/fmap
+data/demo/points_16384
+logs/
+results/
+dbnet_test.py
+utils/weights/*.h5
