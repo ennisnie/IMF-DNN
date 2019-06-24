@@ -93,8 +93,8 @@ if __name__ == '__main__':
     channel_1, channel_2, num_classes,c1 = 12, 8, 10, 4
     model = CentralNet(channel_1, channel_2, num_classes,c1)
     with tf.device('/cpu:0'):
-        x1 = tf.zeros((64, 3, 32, 32))
-        x2 = tf.zeros((64, 3, 32, 32))
+        x1 = tf.zeros((64, 32, 32,3))
+        x2 = tf.zeros((64, 32, 32,3))
         scores = model(x1,x2)
     
     with tf.Session() as sess:
