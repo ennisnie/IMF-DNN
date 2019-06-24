@@ -5,160 +5,99 @@ import math
 import timeit
 #import matplotlib.pyplot as plt
 
-# Set up some global variables
+class CentralNet(tf.keras.Model):
+    def __init__(self, channel_1, channel_2, num_classes,c1):
+        super().__init__()
+        ########################################################################
+        # TODO: Implement the __init__ method for a three-layer ConvNet. You   #
+        # should instantiate layer objects to be used in the forward pass.     #
+        ########################################################################
+#         pass
+        initializer = tf.variance_scaling_initializer(scale=2.0)
+        self.conv1 = tf.layers.Conv2D(channel_1, kernel_size=(5,5), 
+                                      strides=(1,1),padding="SAME",
+                                      activation = tf.nn.relu,use_bias=True,
+                                      kernel_initializer = initializer,
+                                      bias_initializer=tf.zeros_initializer())
+        self.conv2 = tf.layers.Conv2D(channel_2, kernel_size=(3,3), 
+                                      strides=(1,1),padding="SAME",
+                                      activation = tf.nn.relu,use_bias=True,
+                                      kernel_initializer = initializer,
+                                      bias_initializer=tf.zeros_initializer())
+        self.fc4c1 = tf.layers.Dense(c1, activation=None,use_bias=False,
+                                  kernel_initializer=initializer,
+                                  bias_initializer=tf.zeros_initializer())
+        self.fc4c2 = tf.layers.Dense(num_classes, activation=None,use_bias=False,
+                                  kernel_initializer=initializer,
+                                  bias_initializer=tf.zeros_initializer())
+        self.fc4cc = tf.layers.Dense(num_classes, activation=None,use_bias=False,
+                                  kernel_initializer=initializer,
+                                  bias_initializer=tf.zeros_initializer())
+        self.fc4conv = tf.layers.Dense(num_classes, activation=None,use_bias=True,
+                                  kernel_initializer=initializer,
+                                  bias_initializer=tf.zeros_initializer())
+        self.flatten = tf.keras.layers.Flatten()
+                                      
+        ########################################################################
+        #                           END OF YOUR CODE                           #
+        ########################################################################
 
-def flatten(x):
-    """    
-    Input:
-    - TensorFlow Tensor of shape (N, D1, ..., DM)
     
-    Output:
-    - TensorFlow Tensor of shape (N, D1 * ... * DM)
-    """
-    N = tf.shape(x)[0]
-    return tf.reshape(x, (N, -1))
-    
-def fc(x, w):
+    def call(self, x1,x2, training=None):
+        scores = None
+        ########################################################################
+        # TODO: Implement the forward pass for a three-layer ConvNet. You      #
+        # should use the layer objects defined in the __init__ method.         #
+        ########################################################################
+#         pass
+        x1_conv1 = self.conv1(x1)
+        h1=self.flatten(x1_conv1)
+        x2_conv1 = self.conv1(x2)
+        h2=self.flatten(x2_conv1)
+        hc1=self.fc4c1(h1)+self.fc4c1(h2)
+        ##
+        x1_conv2 = self.conv2(x1_conv1)
+        x2_conv2 = self.conv2(x2_conv1)
+        x1_flat = self.flatten(x1_conv2)
+        x2_flat = self.flatten(x2_conv2)
+        hc2=self.fc4c2(x1_flat)+self.fc4c2(x2_flat)+self.fc4cc(hc1)
+        scores = self.fc4conv(x1_flat)+self.fc4conv(x2_flat)+hc2
+        ########################################################################
+        #                           END OF YOUR CODE                           #
+        ########################################################################        
+        return scores
 
-    x = flatten(x)   # Flatten the input; now x has shape (N, D)
-    ly=tf.matmul(x, w)
-    out = tf.nn.relu(ly) # Hidden layer: h has shape (N, H)
-    return out
+def placeholder_inputs(batch_size, img_rows=66, img_cols=200, points=16384, separately=False):
+    imgs_pl = tf.placeholder(tf.float32, shape=(batch_size, img_rows, img_cols, 3))
+    pts_pl = tf.placeholder(tf.float32, shape=(batch_size, points, 3))
+    if separately:
+        speeds_pl = tf.placeholder(tf.float32, shape=(batch_size))
+        angles_pl = tf.placeholder(tf.float32, shape=(batch_size))
+        labels_pl = [speeds_pl, angles_pl]
+    labels_pl = tf.placeholder(tf.float32, shape=(batch_size, 2))
+    return imgs_pl, pts_pl, labels_pl
 
-def convlayer(x, params):
-    conv_w, conv_b = params
-    x_conv = tf.nn.conv2d(x, conv_w, [1,1,1,1], "SAME") 
-    x_conv_b = tf.nn.bias_add(x_conv,conv_b) 
-    out = tf.nn.relu(x_conv_b)
-    return out
 
-def three_layer_convnet(x, params):
-    conv_w1, conv_b1, conv_w2, conv_b2, fc_w, fc_b = params
-    scores = None
-    ly1=convlayer(x,[conv_w1,conv_b1])
-    ly2=convlayer(ly1,[conv_w2,conv_b2])
-    x_flat = flatten(ly2)
-    scores = tf.matmul(x_flat, fc_w) + fc_b
+def get_loss(pred, label, l2_weight=0.0001):
+    diff = tf.square(tf.subtract(pred, label))
+    train_vars = tf.trainable_variables()
+    l2_loss = tf.add_n([tf.nn.l2_loss(v) for v in train_vars[1:]]) * l2_weight
+    loss = tf.reduce_mean(diff + l2_loss)
 
-    return ly1,ly2,scores
+    return loss
 
-def centralnet(h1,h2,params):
-    w1,w2=params
-    h1=flatten(h1) #h1,h2 of shape(N,D)
-    h2=flatten(h2)
-    hc=tf.matmul(h1,w1)+tf.matmul(h2,w2)#Hidden layer:hc has shape (N,H)
-    return hc
 
-def conv_centralnet(x1,x2,params):
-    feed1,feed2,feedc=params
-    #convnet
-    h11,h21,out1 = three_layer_convnet(x1, feed1)
-    h12,h22,out2 = three_layer_convnet(x2, feed2)
-
-    #centralnet
-    c11,c12,c21,c22,cc1=feedc
-    hc1=centralnet(h11,h12,[c11,c12])
-    hc2=centralnet(h21,h22,[c21,c22])+tf.matmul(hc1,cc1)
-
-    #final
-    scores= out1+out2+hc2
-    return scores
-
-def three_layer_convnet_test():
+if __name__ == '__main__':
     tf.reset_default_graph()
-
-    with tf.device(device):
-        #conv1
-        x1 = tf.placeholder(tf.float32)
-        conv1_w1 = tf.zeros((5, 5, 3, 6))
-        conv1_b1 = tf.zeros((6,))
-        conv1_w2 = tf.zeros((3, 3, 6, 9))
-        conv1_b2 = tf.zeros((9,))
-        fc1_w = tf.zeros((32 * 32 * 9, 10))
-        fc1_b = tf.zeros((10,))
-        feed1 = [conv1_w1, conv1_b1, conv1_w2, conv1_b2, fc1_w, fc1_b]
-        
-        #conv2
-        
-        x2 = tf.placeholder(tf.float32)
-        conv2_w1 = tf.zeros((5, 5, 3, 6))
-        conv2_b1 = tf.zeros((6,))
-        conv2_w2 = tf.zeros((3, 3, 6, 9))
-        conv2_b2 = tf.zeros((9,))
-        fc2_w = tf.zeros((32 * 32 * 9, 10))
-        fc2_b = tf.zeros((10,))
-        feed2 = [conv2_w1, conv2_b1, conv2_w2, conv2_b2, fc2_w, fc2_b]
-
-        
-        #centralnet
-        c11 = tf.zeros((32*32*6, 4))
-        c12 = tf.zeros((32*32*6, 4))
-        c21 = tf.zeros((32*32*9, 10))
-        c22 = tf.zeros((32*32*9, 10))
-        cc1 = tf.zeros((4, 10))
- 
-        feedc=[c11,c12,c21,c22,cc1]
-
-        #final
-        
-        params=[feed1,feed2,feedc]
-        scores=conv_centralnet(x1,x2,params)
-    # Inputs to convolutional layers are 4-dimensional arrays with shape
-    # [batch_size, height, width, channels]
-    x1_np = np.zeros((64, 32, 32, 3))
-    x2_np = np.zeros((64, 32, 32, 3))   
+    
+    channel_1, channel_2, num_classes,c1 = 12, 8, 10, 4
+    model = CentralNet(channel_1, channel_2, num_classes,c1)
+    with tf.device('/cpu:0'):
+        x1 = tf.zeros((64, 3, 32, 32))
+        x2 = tf.zeros((64, 3, 32, 32))
+        scores = model(x1,x2)
+    
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        scores_np = sess.run(scores, feed_dict={x1: x1_np,x2:x2_np})
-        print('scores_np has shape: ', scores_np.shape)
-
-def conv_centralnet_test(device):
-    tf.reset_default_graph()
-
-    with tf.device(device):
-        #conv1
-        x1 = tf.placeholder(tf.float32)
-        conv1_w1 = tf.zeros((5, 5, 3, 6))
-        conv1_b1 = tf.zeros((6,))
-        conv1_w2 = tf.zeros((3, 3, 6, 9))
-        conv1_b2 = tf.zeros((9,))
-        fc1_w = tf.zeros((32 * 32 * 9, 10))
-        fc1_b = tf.zeros((10,))
-        feed1 = [conv1_w1, conv1_b1, conv1_w2, conv1_b2, fc1_w, fc1_b]
-        
-        #conv2
-        
-        x2 = tf.placeholder(tf.float32)
-        conv2_w1 = tf.zeros((5, 5, 3, 6))
-        conv2_b1 = tf.zeros((6,))
-        conv2_w2 = tf.zeros((3, 3, 6, 9))
-        conv2_b2 = tf.zeros((9,))
-        fc2_w = tf.zeros((32 * 32 * 9, 10))
-        fc2_b = tf.zeros((10,))
-        feed2 = [conv2_w1, conv2_b1, conv2_w2, conv2_b2, fc2_w, fc2_b]
-
-        
-        #centralnet
-        c11 = tf.zeros((32*32*6, 4))
-        c12 = tf.zeros((32*32*6, 4))
-        c21 = tf.zeros((32*32*9, 10))
-        c22 = tf.zeros((32*32*9, 10))
-        cc1 = tf.zeros((4, 10))
- 
-        feedc=[c11,c12,c21,c22,cc1]
-
-        #final
-        
-        params=[feed1,feed2,feedc]
-        scores=conv_centralnet(x1,x2,params)
-    # Inputs to convolutional layers are 4-dimensional arrays with shape
-    # [batch_size, height, width, channels]
-    x1_np = np.zeros((64, 32, 32, 3))
-    x2_np = np.zeros((64, 32, 32, 3))   
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        scores_np = sess.run(scores, feed_dict={x1: x1_np,x2:x2_np})
-        print('scores_np has shape: ', scores_np.shape)
-
-#if __name__ == "__main__":
- #   conv_centralnet_test()
+        scores_np = sess.run(scores)
+        print(scores_np.shape)
