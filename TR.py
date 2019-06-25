@@ -9,7 +9,7 @@ import scipy
 import CNet
 import provider
     
-def train_part34(model_init_fn, optimizer_init_fn, MAX_EPOCH，device,BATCH_SIZE):
+def train_part34(model_init_fn, optimizer_init_fn, MAX_EPOCH, device, BATCH_SIZE):
 
     tf.reset_default_graph()    
     with tf.device(device):
@@ -69,15 +69,15 @@ def train_part34(model_init_fn, optimizer_init_fn, MAX_EPOCH，device,BATCH_SIZE
             #        check_accuracy(sess, val_dset, x1,x2, scores, is_training=is_training)
             #        print()
             #    t += 1
-            train_one_epoch(sess, ops, data_input)
-            eval_one_epoch(sess, ops, data_input)
+            train_one_epoch(sess, ops, data_input, BATCH_SIZE)
+            eval_one_epoch(sess, ops, data_input, BATCH_SIZE)
 
             # Save the variables to disk.
             #if epoch % 10 == 0:
                 #save_path = saver.save(sess, os.path.join(LOG_DIR, "model.ckpt"))
                 #log_string("Model saved in file: %s" % save_path)
 
-def train_one_epoch(sess, ops, data_input):
+def train_one_epoch(sess, ops, data_input, BATCH_SIZE):
     """ ops: dict mapping from string to tf ops """
     is_training = True
     num_batches = data_input.num_train // BATCH_SIZE
@@ -105,7 +105,7 @@ def train_one_epoch(sess, ops, data_input):
     print('accuracy (speed): %f' % (acc_s_sum / float(num_batches)))
 
 
-def eval_one_epoch(sess, ops, data_input):
+def eval_one_epoch(sess, ops, data_input, BATCH_SIZE):
     """ ops: dict mapping from string to tf ops """
     is_training = False
     loss_sum = 0
@@ -116,9 +116,9 @@ def eval_one_epoch(sess, ops, data_input):
     acc_s_sum = 0
 
     for batch_idx in range(num_batches):
-        imgs, labels = data_input.load_one_batch(BATCH_SIZE, "val")
+        imgs, fmaps,labels = data_input.load_one_batch(BATCH_SIZE, "val")
         feed_dict = {ops['x1']: imgs,
-                     ops['x2']: imgs,
+                     ops['x2']: fmaps,
                      ops['y']: labels,
                      ops['is_training']: is_training}
 
