@@ -6,7 +6,14 @@ data/dbnet-2018/test
 data/demo/DVR
 data/demo/fmap
 data/demo/points_16384
-logs/
+data/conditioned/blur
+data/conditioned/dark
+data/conditioned/rain
+data/conditioned/resize
+data/conditioned/rota2
+data/conditioned/snow
+data/conditioned/sunset
+log/
 results/
 dbnet_test.py
 utils/weights/*.h5
