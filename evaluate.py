@@ -19,7 +19,7 @@ import tensorflow as tf
 def Evaluate(model_init_fn,device,BATCH_SIZE):
     with tf.device(device):
         
-        data_input = provider.DVR_FMAP_Provider()
+        data_input = provider.DVR_FMAP_Provider_rotation()
 
         imgs_pl, pts_pl, labels_pl = CNet.placeholder_inputs(BATCH_SIZE)
         x1=imgs_pl

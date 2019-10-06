@@ -13,6 +13,8 @@ data/conditioned/resize
 data/conditioned/rota2
 data/conditioned/snow
 data/conditioned/sunset
+logs/
+data/mixed/
 log/
 results/
 dbnet_test.py
