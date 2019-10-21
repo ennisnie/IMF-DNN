@@ -1,3 +1,26 @@
+
+.vscode/
+*pyc
+data/dbnet-2018/train
+data/dbnet-2018/val
+data/dbnet-2018/test
+data/demo/DVR
+data/demo/fmap
+data/demo/points_16384
+data/conditioned/blur
+data/conditioned/dark
+data/conditioned/rain
+data/conditioned/resize
+data/conditioned/rota2
+data/conditioned/snow
+data/conditioned/sunset
+logs/
+data/mixed/
+log/
+results/
+dbnet_test.py
+utils/weights/*.h5
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

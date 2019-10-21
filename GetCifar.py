@@ -40,16 +40,6 @@ def load_cifar10(num_training=49000, num_validation=1000, num_test=10000):
     return X_train, y_train, X_val, y_val, X_test, y_test
 
 
-# Invoke the above function to get our data.
-NHW = (0, 1, 2)
-X_train, y_train, X_val, y_val, X_test, y_test = load_cifar10()
-print('Train data shape: ', X_train.shape)
-print('Train labels shape: ', y_train.shape, y_train.dtype)
-print('Validation data shape: ', X_val.shape)
-print('Validation labels shape: ', y_val.shape)
-print('Test data shape: ', X_test.shape)
-print('Test labels shape: ', y_test.shape)
-
 class Dataset(object):
     def __init__(self, X, y, batch_size, shuffle=False):
         """
@@ -71,13 +61,3 @@ class Dataset(object):
         if self.shuffle:
             np.random.shuffle(idxs)
         return iter((self.X[i:i+B], self.y[i:i+B]) for i in range(0, N, B))
-
-
-train_dset = Dataset(X_train, y_train, batch_size=64, shuffle=True)
-val_dset = Dataset(X_val, y_val, batch_size=64, shuffle=False)
-test_dset = Dataset(X_test, y_test, batch_size=64)
-
-# We can iterate through a dataset like this:
-for t, (x, y) in enumerate(train_dset):
-    print(t, x.shape, y.shape)
-    if t > 5: break
