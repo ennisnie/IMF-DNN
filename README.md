@@ -16,3 +16,4 @@ This work is based on our research paper, but we are still waiting for reviews. 
   CUDA 10.0
   normally used python libraries and **laspy**
 
+11.12.2019 update: add mixing template code
