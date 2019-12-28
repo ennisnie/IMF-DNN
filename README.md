@@ -17,3 +17,4 @@ This work is based on our research paper, but we are still waiting for reviews. 
   normally used python libraries and **laspy**
 
 11.12.2019 update: add mixing template code
+12.28.2019 update: add image+pointnet fusion version
