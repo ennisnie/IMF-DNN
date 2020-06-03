@@ -9,7 +9,7 @@ from math import ceil
 import numpy as np
 import scipy.misc
 from PIL import Image
-
+import imageio
 import laspy
 
 
@@ -618,15 +618,14 @@ class DVR_Points_Provider:
         self.num_train = len(self.train_ys)
         self.num_val = len(self.val_ys)
 
-    def load_one_batch(self, batch_size, description='train', shape=[66, 200]):
+    def load_one_batch(self, batch_size, description='train', shape=[200, 66]):
         x_out1 = []
         x_out2 = []
         y_out = []
         if description == 'train':
             for i in range(0, batch_size):
                 index = (self.train_pointer + i) % len(self.train_xs1)
-                x_out1.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.train_xs1[index]), shape) / 255.0)
+                x_out1.append(np.array(Image.fromarray(imageio.imread(self.train_xs1[index])).resize(size=shape)) / 255.0)
                 infile = laspy.file.File(self.train_xs2[index])
                 data = np.vstack([infile.X, infile.Y, infile.Z]).transpose()
                 x_out2.append(data)
@@ -635,8 +634,8 @@ class DVR_Points_Provider:
         else:
             for i in range(0, batch_size):
                 index = (self.val_pointer + i) % len(self.val_xs1)
-                x_out1.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.val_xs1[index]), shape) / 255.0)
+                #x_out1.append(scipy.misc.imresize(imageio.imread(self.val_xs1[index]), shape) / 255.0)
+                x_out1.append(np.array(Image.fromarray(imageio.imread(self.train_xs1[index])).resize(size=shape)) / 255.0)
                 infile = laspy.file.File(self.val_xs2[index])
                 data = np.vstack([infile.X, infile.Y, infile.Z]).transpose()
                 x_out2.append(data)
@@ -644,7 +643,7 @@ class DVR_Points_Provider:
                 self.val_pointer += batch_size
         return np.stack(x_out1), np.stack(x_out2), np.stack(y_out)
 
-    def load_val_all(self, batch_size, shape=[66, 200]):
+    def load_val_all(self, batch_size, shape=[200, 66]):
         x_out1 = []
         x_out2 = []
         y_out = []
@@ -656,8 +655,8 @@ class DVR_Points_Provider:
             ys = []
             if i == iteration - 1:
                 for i in range(index, len(self.val_xs1)):
-                    xs1.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs1[i]), shape) / 255.0)
+                    # xs1.append(scipy.misc.imresize(imageio.imread(self.val_xs1[i]), shape) / 255.0)
+                    xs1.append(np.array(Image.fromarray(imageio.imread(self.val_xs1[i])).resize(size=shape)) / 255.0)
                     infile = laspy.file.File(self.val_xs2[i])
                     data = np.vstack([infile.X, infile.Y, infile.Z]).transpose()
                     xs2.append(data)
@@ -665,8 +664,8 @@ class DVR_Points_Provider:
                     ys.append(self.val_ys[i])
             else:
                 for i in range(0, batch_size):
-                    xs1.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs1[index + i]), shape) / 255.0)
+                    # xs1.append(scipy.misc.imresize(imageio.imread(self.val_xs1[index + i]), shape) / 255.0)
+                    xs1.append(np.array(Image.fromarray(imageio.imread(self.val_xs1[index + i])).resize(size=shape)) / 255.0)
                     infile = laspy.file.File(self.val_xs2[index + i])
                     data = np.vstack([infile.X, infile.Y, infile.Z]).transpose()
                     xs2.append(data)
@@ -681,6 +680,7 @@ class DVR_Points_Provider:
 
 
 def testProvider():
+    '''
     instance0 = Provider()
     print (len(instance0.X_train1), len(instance0.X_train2), len(instance0.Y_train))
     print (len(instance0.X_val1), len(instance0.X_val2), len(instance0.Y_val))
@@ -701,6 +701,7 @@ def testProvider():
         print (x1_.shape, x2_.shape)
         print (np.asarray(instance0.x_test1).shape)
         x1_, x2_ = instance0.load_one_batch(156, 'test')
+        '''
     '''
     instance1 = DVR_Provider()
     print (len(instance1.xs), len(instance1.ys))
@@ -729,7 +730,7 @@ def testProvider():
     print (x1_[0].shape)
     print (x2_[len(x1_) - 1].shape)
     print (y_[2].shape)
-
+    '''
     instance3 = DVR_Points_Provider()
     print (len(instance3.xs1), len(instance3.xs2), len(instance3.ys))
     print (len(instance3.train_xs1), len(instance3.train_xs2), len(instance3.train_ys))
@@ -742,7 +743,7 @@ def testProvider():
     for i in range(1):
         x1_, x2_, y_ = instance3.load_one_batch(156, 'train')
         print (x1_.shape, x2_.shape, y_.shape)
-    '''
+    
 
 if __name__ == "__main__":
     testProvider()
