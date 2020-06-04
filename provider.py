@@ -389,26 +389,26 @@ class DVR_FMAP_Provider:
         self.num_train = len(self.train_ys)
         self.num_val = len(self.val_ys)
 
-    def load_one_batch(self, batch_size, description='train', shape1=[66, 200], shape2=[66, 200]):
+    def load_one_batch(self, batch_size, description='train', shape1=[200, 66], shape2=[200, 66]):
         x_out1 = []
         x_out2 = []
         y_out = []
         if description == 'train':
             for i in range(0, batch_size):
                 index = (self.train_pointer + i) % len(self.train_xs1)
-                x_out1.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.train_xs1[index]), shape1) / 255.0)
-                x_out2.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.train_xs2[index]), shape2) / 255.0)
+                #x_out1.append(scipy.misc.imresize(scipy.misc.imread(self.train_xs1[index]), shape1) / 255.0)
+                x_out1.append(np.array(Image.fromarray(imageio.imread(self.train_xs1[index])).resize(size=shape1)) / 255.0)
+                #x_out2.append(scipy.misc.imresize(scipy.misc.imread(self.train_xs2[index]), shape2) / 255.0)
+                x_out2.append(np.array(Image.fromarray(imageio.imread(self.train_xs2[index])).resize(size=shape2)) / 255.0)
                 y_out.append(self.train_ys[index])
                 self.train_pointer += batch_size
         else:
             for i in range(0, batch_size):
                 index = (self.val_pointer + i) % len(self.val_xs1)
-                x_out1.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.val_xs1[index]), shape1) / 255.0)
-                x_out2.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.val_xs2[index]), shape2) / 255.0)
+                #x_out1.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs1[index]), shape1) / 255.0)
+                #x_out2.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs2[index]), shape2) / 255.0)
+                x_out1.append(np.array(Image.fromarray(imageio.imread(self.val_xs1[index])).resize(size=shape1)) / 255.0)
+                x_out2.append(np.array(Image.fromarray(imageio.imread(self.val_xs2[index])).resize(size=shape2)) / 255.0)
                 y_out.append(self.val_ys[index])
                 self.val_pointer += batch_size
 
@@ -426,17 +426,13 @@ class DVR_FMAP_Provider:
             ys = []
             if i == iteration - 1:
                 for i in range(index, len(self.val_xs1)):
-                    xs1.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs1[i]), shape1) / 255.0)
-                    xs2.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs2[i]), shape2) / 255.0)
+                    xs1.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs1[i]), shape1) / 255.0)
+                    xs2.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs2[i]), shape2) / 255.0)
                     ys.append(self.val_ys[i])
             else:
                 for i in range(0, batch_size):
-                    xs1.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs1[index + i]), shape1) / 255.0)
-                    xs2.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs2[index + i]), shape2) / 255.0)
+                    xs1.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs1[index + i]), shape1) / 255.0)
+                    xs2.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs2[index + i]), shape2) / 255.0)
                     ys.append(self.val_ys[index + i])
                 index += batch_size
 
@@ -503,26 +499,26 @@ class DVR_FMAP_Provider_rotation:
         self.num_train = len(self.train_ys)
         self.num_val = len(self.val_ys)
 
-    def load_one_batch(self, batch_size, description='train', shape1=[66, 200], shape2=[66, 200]):
+    def load_one_batch(self, batch_size, description='train', shape1=[200, 66], shape2=[200, 66]):
         x_out1 = []
         x_out2 = []
         y_out = []
         if description == 'train':
             for i in range(0, batch_size):
                 index = (self.train_pointer + i) % len(self.train_xs1)
-                x_out1.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.train_xs1[index]), shape1) / 255.0)
-                x_out2.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.train_xs2[index]), shape2) / 255.0)
+                #x_out1.append(scipy.misc.imresize(scipy.misc.imread(self.train_xs1[index]), shape1) / 255.0)
+                x_out1.append(np.array(Image.fromarray(imageio.imread(self.train_xs1[index])).resize(size=shape1)) / 255.0)
+                #x_out2.append(scipy.misc.imresize(scipy.misc.imread(self.train_xs2[index]), shape2) / 255.0)
+                x_out2.append(np.array(Image.fromarray(imageio.imread(self.train_xs2[index])).resize(size=shape2)) / 255.0)
                 y_out.append(self.train_ys[index])
                 self.train_pointer += batch_size
         else:
             for i in range(0, batch_size):
                 index = (self.val_pointer + i) % len(self.val_xs1)
-                x_out1.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.val_xs1[index]), shape1) / 255.0)
-                x_out2.append(scipy.misc.imresize(scipy.misc.imread(
-                              self.val_xs2[index]), shape2) / 255.0)
+                #x_out1.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs1[index]), shape1) / 255.0)
+                #x_out2.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs2[index]), shape2) / 255.0)
+                x_out1.append(np.array(Image.fromarray(imageio.imread(self.val_xs1[index])).resize(size=shape1)) / 255.0)
+                x_out2.append(np.array(Image.fromarray(imageio.imread(self.val_xs2[index])).resize(size=shape2)) / 255.0)
                 y_out.append(self.val_ys[index])
                 self.val_pointer += batch_size
 
@@ -540,17 +536,18 @@ class DVR_FMAP_Provider_rotation:
             ys = []
             if i == iteration - 1:
                 for i in range(index, len(self.val_xs1)):
-                    xs1.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs1[i]), shape1) / 255.0)
-                    xs2.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs2[i]), shape2) / 255.0)
+                    #xs1.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs1[i]), shape1) / 255.0)
+                    #xs2.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs2[i]), shape2) / 255.0)
+                    xs1.append(np.array(Image.fromarray(imageio.imread(self.val_xs1[i])).resize(size=shape1)) / 255.0)
+                    xs2.append(np.array(Image.fromarray(imageio.imread(self.val_xs2[i])).resize(size=shape2)) / 255.0)
                     ys.append(self.val_ys[i])
             else:
                 for i in range(0, batch_size):
-                    xs1.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs1[index + i]), shape1) / 255.0)
-                    xs2.append(scipy.misc.imresize(scipy.misc.imread(
-                               self.val_xs2[index + i]), shape2) / 255.0)
+                    #xs1.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs1[index + i]), shape1) / 255.0)
+                    #xs2.append(scipy.misc.imresize(scipy.misc.imread(self.val_xs2[index + i]), shape2) / 255.0)
+                    xs1.append(np.array(Image.fromarray(imageio.imread(self.val_xs1[index + i])).resize(size=shape1)) / 255.0)
+                    xs2.append(np.array(Image.fromarray(imageio.imread(self.val_xs2[index + i])).resize(size=shape2)) / 255.0)
+
                     ys.append(self.val_ys[index + i])
                 index += batch_size
 
