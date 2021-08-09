@@ -34,4 +34,4 @@ https://github.com/rentju/RRC-SSD
 
 08.06.2020 update: new branch - mobilenet(V3) instead of VGG as backbone
 
-01.07.2020 updata: add object detection on KITTI code branch reference and test strategy for cross-domain neural network performance test strtegy
+01.07.2020 update: add object detection on KITTI code branch reference and test strategy for cross-domain neural network performance test strtegy
